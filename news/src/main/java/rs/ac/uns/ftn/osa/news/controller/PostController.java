@@ -1,9 +1,17 @@
 package rs.ac.uns.ftn.osa.news.controller;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
+import javafx.geometry.Pos;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.repository.Repository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -20,6 +28,7 @@ import rs.ac.uns.ftn.osa.news.dto.PostDTO;
 
 import rs.ac.uns.ftn.osa.news.entity.Post;
 import rs.ac.uns.ftn.osa.news.entity.Tag;
+import rs.ac.uns.ftn.osa.news.service.CommentService;
 import rs.ac.uns.ftn.osa.news.service.PostServiceInterface;
 import rs.ac.uns.ftn.osa.news.service.TagServiceInterface;
 import rs.ac.uns.ftn.osa.news.service.UserServiceInterface;
@@ -28,9 +37,11 @@ import rs.ac.uns.ftn.osa.news.service.UserServiceInterface;
 @RequestMapping(value="api/posts")
 public class PostController {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(PostController.class);
+
 	@Autowired
 	private PostServiceInterface postService;
-	
+
 	@Autowired 
 	private UserServiceInterface userService;
 	
@@ -45,8 +56,9 @@ public class PostController {
 		for(Post p:posts) {
 			postsDTO.add(new PostDTO(p));
 		}
+		LOGGER.debug("Lista postova");
 		return new ResponseEntity<List<PostDTO>>(postsDTO, HttpStatus.OK);
-		
+
 	}
 	
 	@GetMapping(value="/{id}")
@@ -70,7 +82,30 @@ public class PostController {
 		return new ResponseEntity<List<PostDTO>>(postsDTO,HttpStatus.OK);
 	}
 
-	@GetMapping(value="/sortByDate")
+	@GetMapping(value="/searchbyauthor/{username}")
+	public ResponseEntity<List<PostDTO>> searchByAuthor(@PathVariable("username") String username){
+		List<Post> postByAuthor = postService.findByAuthor(userService.findByUsername(username));
+
+		List<PostDTO> postsDTO = new ArrayList<PostDTO>();
+		for(Post p:postByAuthor) {
+			System.out.println(p.getAuthor().getName());
+			postsDTO.add(new PostDTO(p));
+		}
+		return new ResponseEntity<List<PostDTO>>(postsDTO,HttpStatus.OK);
+	}
+
+	@GetMapping(value="/tags/{name}")
+	public ResponseEntity<List<PostDTO>> searchByTag(@PathVariable("name") String name){
+		List<Post> postByTagSearch = postService.findByTags_Name(name);
+
+		List<PostDTO> postsDTO = new ArrayList<PostDTO>();
+		for(Post p:postByTagSearch) {
+			postsDTO.add(new PostDTO(p));
+		}
+		return new ResponseEntity<List<PostDTO>>(postsDTO,HttpStatus.OK);
+	}
+
+	@GetMapping(value="/sort/bydate")
 	public ResponseEntity<List<PostDTO>> getPostsSorted(){
 		List<Post> posts = postService.findAllByOrderByDateDesc();
 		List<PostDTO> postsDTO = new ArrayList<PostDTO>();
@@ -79,9 +114,44 @@ public class PostController {
 		}
 		return new ResponseEntity<List<PostDTO>>(postsDTO, HttpStatus.OK);
 	}
+
+	@GetMapping(value="/sort/bycomments")
+	public ResponseEntity<List<PostDTO>> getPostsSortedCom(){
+		List<Post> posts = postService.findAll();
+		List<PostDTO> postsDTO = new ArrayList<PostDTO>();
+
+		Collections.sort(posts, new Comparator<Post>() {
+			@Override
+			public int compare(Post o1, Post o2) {
+				return o1.getComments().size() - o2.getComments().size();
+			}
+		});
+		for(Post p:posts) {
+			postsDTO.add(new PostDTO(p));
+		}
+		return new ResponseEntity<List<PostDTO>>(postsDTO, HttpStatus.OK);
+	}
 	
-	
-	
+	@GetMapping(value="/sort/bylikes")
+	public ResponseEntity<List<PostDTO>> getPostsSortByLikes(){
+		List<Post> posts = postService.findAllByOrderByLikes();
+		List<PostDTO> postsDTO = new ArrayList<>();
+		for(Post p:posts){
+			postsDTO.add(new PostDTO(p));
+		}
+		return new ResponseEntity<List<PostDTO>>(postsDTO,HttpStatus.OK);
+	}
+
+	@GetMapping(value="/sort/bydislikes")
+	public ResponseEntity<List<PostDTO>> getPostsSortByDisikes(){
+		List<Post> posts = postService.findAllByOrderByDislikes();
+		List<PostDTO> postsDTO = new ArrayList<>();
+		for(Post p:posts){
+			postsDTO.add(new PostDTO(p));
+		}
+		return new ResponseEntity<List<PostDTO>>(postsDTO,HttpStatus.OK);
+	}
+
 	@PostMapping(consumes="application/json")
 	public ResponseEntity<PostDTO> savePost(@RequestBody PostDTO postDTO){
 		Post post = new Post();
@@ -103,7 +173,7 @@ public class PostController {
 		return new ResponseEntity<PostDTO>(new PostDTO(post),HttpStatus.CREATED);
 	}
 	
-	@PutMapping(value="/setTags/{postId}/{tagId}",consumes = "application/json")
+	@PutMapping(value="/setTags/{postId}/{tagId}")
 	public ResponseEntity<PostDTO> setTagsInPost(@PathVariable("postId") Long postId,@PathVariable("tagId") Long tagId){
 		Post post = postService.findOne(postId);
 		Tag tag = tagService.findOne(tagId);

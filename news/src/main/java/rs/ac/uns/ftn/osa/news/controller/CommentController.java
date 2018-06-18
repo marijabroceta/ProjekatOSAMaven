@@ -1,9 +1,12 @@
 package rs.ac.uns.ftn.osa.news.controller;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import rs.ac.uns.ftn.osa.news.dto.CommentDTO;
+import rs.ac.uns.ftn.osa.news.dto.PostDTO;
 import rs.ac.uns.ftn.osa.news.entity.Comment;
 import rs.ac.uns.ftn.osa.news.service.CommentServiceInterface;
 import rs.ac.uns.ftn.osa.news.service.PostServiceInterface;
@@ -64,16 +68,40 @@ public class CommentController {
 		
 		return new ResponseEntity<List<CommentDTO>>(commentsDTO,HttpStatus.OK);
 	}
-	/*
-	@GetMapping(value="/sort")
-	public ResponseEntity<List<CommentDTO>> getCommentsSorted(){
-		List<Comment> comments = commentService.findAllByOrderByDateDesc();
+
+	@GetMapping(value="/post/sort/bydate/{id}")
+	public ResponseEntity<List<CommentDTO>> getCommentsSortByDate(@PathVariable("id") Long id) {
+		Sort sort = new Sort(Sort.Direction.DESC,"date");
+		List<Comment> comments = commentService.findByPost(postService.findOne(id),sort);
+		List<CommentDTO> commentsDTO = new ArrayList<CommentDTO>();
+		for (Comment c : comments) {
+			commentsDTO.add(new CommentDTO(c));
+		}
+		return new ResponseEntity<List<CommentDTO>>(commentsDTO, HttpStatus.OK);
+	}
+
+	@GetMapping(value="/post/sort/bylikes/{id}")
+	public ResponseEntity<List<CommentDTO>> getCommentsSortByLikes(@PathVariable("id") Long id){
+		Sort sort = new Sort(Sort.Direction.DESC,"likes");
+		List<Comment> comments = commentService.findByPost(postService.findOne(id),sort);
+		List<CommentDTO> commentsDTO = new ArrayList<CommentDTO>();
+		for (Comment c : comments) {
+			commentsDTO.add(new CommentDTO(c));
+		}
+		return new ResponseEntity<List<CommentDTO>>(commentsDTO, HttpStatus.OK);
+	}
+
+	@GetMapping(value="/post/sort/bydislikes/{id}")
+	public ResponseEntity<List<CommentDTO>> getCommentsSortByDislikes(@PathVariable("id") Long id){
+		Sort sort = new Sort(Sort.Direction.DESC,"dislikes");
+		List<Comment> comments = commentService.findByPost(postService.findOne(id),sort);
 		List<CommentDTO> commentsDTO = new ArrayList<CommentDTO>();
 		for(Comment c:comments) {
 			commentsDTO.add(new CommentDTO(c));
 		}
 		return new ResponseEntity<List<CommentDTO>>(commentsDTO, HttpStatus.OK);
-	}*/
+	}
+
 	
 	@PostMapping(consumes="application/json")
 	public ResponseEntity<CommentDTO> saveComment(@RequestBody CommentDTO commentDTO){
@@ -87,7 +115,7 @@ public class CommentController {
 		comment.setPost(postService.findOne(commentDTO.getPost().getId()));
 		
 		comment = commentService.save(comment);
-		return new ResponseEntity<CommentDTO>(HttpStatus.CREATED);
+		return new ResponseEntity<CommentDTO>(new CommentDTO(comment),HttpStatus.CREATED);
 		
 	}
 	
@@ -107,7 +135,7 @@ public class CommentController {
 		comment.setPost(postService.findOne(commentDTO.getPost().getId()));
 		
 		comment = commentService.save(comment);
-		return new ResponseEntity<CommentDTO>(HttpStatus.OK);
+		return new ResponseEntity<CommentDTO>(new CommentDTO(comment),HttpStatus.OK);
 	}
 	
 	@DeleteMapping(value="/{id}")

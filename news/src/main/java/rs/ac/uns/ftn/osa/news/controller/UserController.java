@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 
+import rs.ac.uns.ftn.osa.news.dto.PostDTO;
 import rs.ac.uns.ftn.osa.news.dto.UserDTO;
+import rs.ac.uns.ftn.osa.news.entity.Post;
 import rs.ac.uns.ftn.osa.news.entity.User;
 import rs.ac.uns.ftn.osa.news.service.UserServiceInterface;
 
@@ -64,6 +66,7 @@ public class UserController {
 		}
 		return new ResponseEntity<UserDTO>(new UserDTO(user), HttpStatus.OK);
 	}
+
 	
 	
 	@PostMapping(consumes="application/json")

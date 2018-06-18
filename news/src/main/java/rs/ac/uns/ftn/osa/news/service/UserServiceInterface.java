@@ -2,6 +2,7 @@ package rs.ac.uns.ftn.osa.news.service;
 
 import java.util.List;
 
+import rs.ac.uns.ftn.osa.news.entity.Post;
 import rs.ac.uns.ftn.osa.news.entity.User;
 
 public interface UserServiceInterface {
@@ -13,6 +14,7 @@ public interface UserServiceInterface {
 	User findByUsernameAndPassword(String username,String password);
 	
 	User findByUsername(String username);
+
 	
 	User save(User user);
 	
